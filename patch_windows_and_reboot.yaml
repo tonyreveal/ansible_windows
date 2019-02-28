@@ -1,0 +1,26 @@
+---
+- name: Patch Windows Servers
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Warn logged in users of impending reboot
+      win_msg:
+        display_seconds: 60
+        wait: no
+        msg: "Windows Updates are being installed.  Please save any work and log off as the server will reboot when complete."
+
+    - name: Install updates
+      win_updates:
+        category_names:
+          - CriticalUpdates
+          - SecurityUpdates
+        reboot: yes
+        reboot_timeouot: 60
+        state: installed
+      ignore_errors: yes
+      register: updates_results
+
+    - name: Check if all updates installed
+      when: updates_results.failed_update_count != 0
+      debug:
+        msg: "Not all updates installed.  {{ updates_results.failed_update_count }} updates failed to install."
